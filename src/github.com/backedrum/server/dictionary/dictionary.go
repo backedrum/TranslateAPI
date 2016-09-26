@@ -12,10 +12,10 @@ import (
 
 type Entry struct {
 	Original   string `xml:"form>orth"`
-	Translated string `xml:"sense>cit>quote"`
+	Translated []string `xml:"sense>cit>quote"`
 }
 
-var dictMap = make(map[string]string)
+var dictMap = make(map[string][]string)
 var reg, error = regexp.Compile("[^a-zA-Z\\d\\s:]+")
 
 func InitDictionary(path string) {
@@ -60,9 +60,27 @@ func TranslateTextAsWordsList(text string) string {
 	for i := range words {
 
 		if val, ok := dictMap[strings.ToLower(words[i])]; ok {
-			buf.WriteString(val + " ")
+			buf.WriteString(translationWords(val) + " ")
 		} else {
 			buf.WriteString(words[i] + " ")
+		}
+	}
+
+	return buf.String()
+}
+
+func translationWords(val []string) string {
+	var buf bytes.Buffer
+
+	for i, _ := range val {
+		if i > 2 {
+			break
+		}
+
+		if i == 0 {
+			buf.WriteString(val[i])
+		} else {
+			buf.WriteString("[alt:" + val[i] + "]")
 		}
 	}
 
