@@ -52,7 +52,7 @@ func InitDictionary(path string) {
 	}
 }
 
-func TranslateTextAsWordsList(text string) string {
+func TranslateTextAsWordsList(text string, maxAlt int) string {
 	words := strings.Split(reg.ReplaceAllString(text, ""), " ")
 
 	var buf bytes.Buffer
@@ -60,7 +60,7 @@ func TranslateTextAsWordsList(text string) string {
 	for i := range words {
 
 		if val, ok := dictMap[strings.ToLower(words[i])]; ok {
-			buf.WriteString(translationWords(val) + " ")
+			buf.WriteString(translationWords(val, maxAlt) + " ")
 		} else {
 			buf.WriteString(words[i] + " ")
 		}
@@ -69,11 +69,11 @@ func TranslateTextAsWordsList(text string) string {
 	return buf.String()
 }
 
-func translationWords(val []string) string {
+func translationWords(val []string, maxAlt int) string {
 	var buf bytes.Buffer
 
 	for i, _ := range val {
-		if i > 2 {
+		if i > maxAlt {
 			break
 		}
 

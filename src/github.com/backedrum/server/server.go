@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"github.com/backedrum/server/dictionary"
 	"net/http"
+	"strconv"
 )
 
 type ServerResponse struct {
@@ -17,8 +18,13 @@ func translate(res http.ResponseWriter, req *http.Request) {
 	text := req.URL.Query().Get("text")
 	from := req.URL.Query().Get("from")
 	to := req.URL.Query().Get("to")
+	maxAlt, error := strconv.Atoi(req.URL.Query().Get("max-alt"))
+	if error != nil {
+		http.Error(res, error.Error(), http.StatusBadRequest)
+		return
+	}
 
-	response := ServerResponse{text, dictionary.TranslateTextAsWordsList(text), from, to}
+	response := ServerResponse{text, dictionary.TranslateTextAsWordsList(text, maxAlt), from, to}
 
 	xml, error := xml.MarshalIndent(response, "", "  ")
 	if error != nil {
