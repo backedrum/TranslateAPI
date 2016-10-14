@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"github.com/texttheater/golang-levenshtein/levenshtein"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,12 +12,12 @@ import (
 )
 
 type Entry struct {
-	Original   string `xml:"form>orth"`
+	Original   string   `xml:"form>orth"`
 	Translated []string `xml:"sense>cit>quote"`
 }
 
 var dictMap = make(map[string][]string)
-var reg, error = regexp.Compile("[^a-zA-Z\\d\\s:]+")
+var reg, _ = regexp.Compile("[^a-zA-Z\\d\\s:]+")
 
 func InitDictionary(path string) {
 	filePath, error := filepath.Abs(path)
@@ -57,12 +58,28 @@ func TranslateTextAsWordsList(text string, maxAlt int) string {
 
 	var buf bytes.Buffer
 
-	for i := range words {
+	for i := 0; i < len(words); i++ {
 
 		if val, ok := dictMap[strings.ToLower(words[i])]; ok {
 			buf.WriteString(translationWords(val, maxAlt) + " ")
 		} else {
-			buf.WriteString(words[i] + " ")
+			// try to find two words match
+			if i+1 < len(words) {
+				if found, ok := dictMap[strings.ToLower(words[i]+" "+words[i+1])]; ok {
+					buf.WriteString(translationWords(found, maxAlt) + " ")
+					i++
+					continue
+				}
+			}
+
+			// find by min distance
+			found := findByMinDist(strings.ToLower(words[i]))
+			if found == "" {
+				buf.WriteString(words[i] + " ")
+			} else {
+				buf.WriteString(translationWords(dictMap[found], maxAlt))
+			}
+
 		}
 	}
 
@@ -85,4 +102,34 @@ func translationWords(val []string, maxAlt int) string {
 	}
 
 	return buf.String()
+}
+
+func findByMinDist(word string) string {
+	minDist := -1
+	result := ""
+
+	for k := range dictMap {
+		// limit key set in order to limit number of distance calculations
+		if k[0] != word[0] {
+			continue
+		}
+
+		options := levenshtein.Options{
+			InsCost: 1,
+			DelCost: 1,
+			SubCost: 1,
+			Matches: func(sourceCharacter rune, targetCharacter rune) bool {
+				return sourceCharacter == targetCharacter
+			},
+		}
+		dist := levenshtein.DistanceForStrings([]rune(word), []rune(k), options)
+
+		if minDist == -1 || dist < minDist {
+			minDist = dist
+			result = k
+		}
+
+	}
+
+	return result
 }

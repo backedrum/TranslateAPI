@@ -18,10 +18,11 @@ func translate(res http.ResponseWriter, req *http.Request) {
 	text := req.URL.Query().Get("text")
 	from := req.URL.Query().Get("from")
 	to := req.URL.Query().Get("to")
-	maxAlt, error := strconv.Atoi(req.URL.Query().Get("max-alt"))
-	if error != nil {
-		http.Error(res, error.Error(), http.StatusBadRequest)
-		return
+
+	maxAlt := 0
+	maxAltStr := req.URL.Query().Get("max-alt")
+	if maxAltStr != "" {
+		maxAlt, _ = strconv.Atoi(maxAltStr)
 	}
 
 	response := ServerResponse{text, dictionary.TranslateTextAsWordsList(text, maxAlt), from, to}
@@ -43,5 +44,6 @@ func main() {
 	// TODO get rid of hardcoded path
 	dictionary.InitDictionary("./src/github.com/backedrum/server/dictionary-files/nld-eng.tei")
 	http.HandleFunc("/translate", translate)
+
 	http.ListenAndServe(":9000", nil)
 }
