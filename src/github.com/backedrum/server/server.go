@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/xml"
-	"github.com/backedrum/server/dictionary"
+	"fmt"
+	d "github.com/backedrum/server/dictionary"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -19,13 +21,20 @@ func translate(res http.ResponseWriter, req *http.Request) {
 	from := req.URL.Query().Get("from")
 	to := req.URL.Query().Get("to")
 
+	if !d.IsSupported(from, to) {
+		http.Error(res,
+			"Sorry, server currently doesn't support translation from "+from+" to "+to,
+			http.StatusNotImplemented)
+		return
+	}
+
 	maxAlt := 0
 	maxAltStr := req.URL.Query().Get("max-alt")
 	if maxAltStr != "" {
 		maxAlt, _ = strconv.Atoi(maxAltStr)
 	}
 
-	response := ServerResponse{text, dictionary.TranslateText(text, maxAlt), from, to}
+	response := ServerResponse{text, d.TranslateText(from, to, text, maxAlt), from, to}
 
 	xml, error := xml.MarshalIndent(response, "", "  ")
 	if error != nil {
@@ -41,8 +50,16 @@ func translate(res http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	// TODO get rid of hardcoded path
-	dictionary.InitDictionary("./src/github.com/backedrum/server/dictionary-files/nld-eng.tei")
+	if len(os.Args) != 4 {
+		fmt.Sprint("Usage: server <language from> <language to> <path to file")
+		os.Exit(1)
+	}
+
+	d.LangFrom = os.Args[1]
+	d.LangTo = os.Args[2]
+
+	d.InitDictionary(d.LangFrom, d.LangTo, os.Args[3])
+
 	http.HandleFunc("/translate", translate)
 
 	http.ListenAndServe(":9000", nil)

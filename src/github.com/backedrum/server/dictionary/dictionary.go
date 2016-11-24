@@ -16,10 +16,16 @@ type Entry struct {
 	Translated []string `xml:"sense>cit>quote"`
 }
 
+var LangFrom string
+var LangTo string
+
 var dictMap = make(map[string][]string)
 var wordCharReg = regexp.MustCompile("[\\p{L}]")
 
-func InitDictionary(path string) {
+func InitDictionary(langFrom, langTo, path string) {
+	LangFrom = langFrom
+	LangTo = langTo
+
 	filePath, error := filepath.Abs(path)
 	if error != nil {
 		fmt.Println(error)
@@ -53,8 +59,11 @@ func InitDictionary(path string) {
 	}
 }
 
-func TranslateText(text string, maxAlt int) string {
+func IsSupported(from, to string) bool {
+	return LangFrom == from && LangTo == to
+}
 
+func TranslateText(langFrom, langTo, text string, maxAlt int) string {
 	var tmp bytes.Buffer
 	var res bytes.Buffer
 
