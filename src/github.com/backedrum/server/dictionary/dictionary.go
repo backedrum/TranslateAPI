@@ -17,7 +17,7 @@ type Entry struct {
 }
 
 var dictMap = make(map[string][]string)
-var reg, _ = regexp.Compile("[^a-zA-Z\\d\\s:]+")
+var wordCharReg = regexp.MustCompile("[\\p{L}]")
 
 func InitDictionary(path string) {
 	filePath, error := filepath.Abs(path)
@@ -53,37 +53,39 @@ func InitDictionary(path string) {
 	}
 }
 
-func TranslateTextAsWordsList(text string, maxAlt int) string {
-	words := strings.Split(reg.ReplaceAllString(text, ""), " ")
+func TranslateText(text string, maxAlt int) string {
 
-	var buf bytes.Buffer
+	var tmp bytes.Buffer
+	var res bytes.Buffer
 
-	for i := 0; i < len(words); i++ {
+	for _, ch := range text {
+		str := fmt.Sprintf("%c", ch)
 
-		if val, ok := dictMap[strings.ToLower(words[i])]; ok {
-			buf.WriteString(translationWords(val, maxAlt) + " ")
-		} else {
-			// try to find two words match
-			if i+1 < len(words) {
-				if found, ok := dictMap[strings.ToLower(words[i]+" "+words[i+1])]; ok {
-					buf.WriteString(translationWords(found, maxAlt) + " ")
-					i++
-					continue
-				}
+		switch {
+		case wordCharReg.MatchString(str):
+			tmp.WriteString(str)
+		default:
+			if tmp.Len() == 0 {
+				res.WriteString(str)
+				continue
 			}
 
-			// find by min distance
-			found := findByMinDist(strings.ToLower(words[i]))
-			if found == "" {
-				buf.WriteString(words[i] + " ")
+			if val, ok := dictMap[strings.ToLower(tmp.String())]; ok {
+				res.WriteString(translationWords(val, maxAlt) + str)
+				tmp.Reset()
 			} else {
-				buf.WriteString(translationWords(dictMap[found], maxAlt))
+				found := findByMinDist(strings.ToLower(tmp.String()))
+				if found == "" {
+					res.WriteString(tmp.String() + str)
+				} else {
+					res.WriteString(translationWords(dictMap[found], maxAlt) + str)
+				}
+				tmp.Reset()
 			}
-
 		}
 	}
 
-	return buf.String()
+	return res.String()
 }
 
 func translationWords(val []string, maxAlt int) string {

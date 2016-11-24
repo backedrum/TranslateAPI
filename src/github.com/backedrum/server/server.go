@@ -25,7 +25,7 @@ func translate(res http.ResponseWriter, req *http.Request) {
 		maxAlt, _ = strconv.Atoi(maxAltStr)
 	}
 
-	response := ServerResponse{text, dictionary.TranslateTextAsWordsList(text, maxAlt), from, to}
+	response := ServerResponse{text, dictionary.TranslateText(text, maxAlt), from, to}
 
 	xml, error := xml.MarshalIndent(response, "", "  ")
 	if error != nil {
