@@ -7,7 +7,7 @@ FreeDict TEI dictionary files are not distributed with this project.
 You can download files for many language pairs and learn more about the format from this site http://freedict.org/en/
 
 ###Start server:
- > go run server.go <lang from> <lang to> <path to your dictionary file>
+ > go run server.go [lang from] [lang to] [path to your dictionary file]
 
 ###Request parameters:
 - *text*    Text to translate
@@ -17,4 +17,4 @@ You can download files for many language pairs and learn more about the format f
             words alternative translations into a result text.
 
 ###Request sample:
-http://localhost:9000/translate?text=%22Goedemorgen%20iedereen%22&from=NL&to=EN&max-alt=2
+> http://localhost:9000/translate?text=%22Goedemorgen%20iedereen%22&from=NL&to=EN&max-alt=2
