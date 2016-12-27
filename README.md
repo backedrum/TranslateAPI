@@ -1,11 +1,13 @@
-##TranslationAPI REST server.
+##Translation REST server.
 
-Simple REST API that can be used to perform translation.
+Simple REST API that might be used to perform dictionary based translation.
 
-For now only FreeDict TEI dictionary files compatible format is supported.
+Server supports FreeDict TEI file format.
 FreeDict TEI dictionary files are not distributed with this project.
-You can learn more about the format from this site http://freedict.org/en/
-You can create your own TEI dictionary file or downloaded a one from here: https://github.com/freedict/fd-dictionaries
+
+You can learn more about the format from this site: http://freedict.org/en/
+
+You can create your own TEI dictionary file or download a needed one from here: https://github.com/freedict/fd-dictionaries
 
 ###Make
  > make
@@ -20,5 +22,5 @@ You can create your own TEI dictionary file or downloaded a one from here: https
 - *max-alt* Some words might have alternative translations. Specify this param to include certain number of
             words alternative translations into a result text.
 
-###Request sample:
+###Request example:
 > http://localhost:9000/translate?text=%22Goedemorgen%20iedereen%22&from=NL&to=EN&max-alt=2
