@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "FNEAOP9y6XcXzhQPBfNDaT5a8kM=",
+			"path": "github.com/texttheater/golang-levenshtein/levenshtein",
+			"revision": "1298e830a5c134c6830b6d472b7b81faa9492c0a",
+			"revisionTime": "2016-05-12T11:11:59Z"
+		}
+	],
+	"rootPath": "github.com/backedrum/TranslateAPI"
+}
