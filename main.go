@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"html"
 	"net/http"
 	"os"
 	"strconv"
@@ -33,7 +34,7 @@ func translate(res http.ResponseWriter, req *http.Request) {
 		maxAlt, _ = strconv.Atoi(maxAltStr)
 	}
 
-	response := ServerResponse{text, TranslateText(from, to, text, maxAlt), from, to}
+	response := ServerResponse{html.UnescapeString(text), html.UnescapeString(TranslateText(from, to, html.UnescapeString(text), maxAlt)), from, to}
 
 	xml, error := xml.MarshalIndent(response, "", "  ")
 	if error != nil {

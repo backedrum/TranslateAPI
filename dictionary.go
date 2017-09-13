@@ -5,12 +5,13 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/texttheater/golang-levenshtein/levenshtein"
+	"math"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
+// TEI file mappings
 type Entry struct {
 	Original   string   `xml:"form>orth"`
 	Translated []string `xml:"sense>cit>quote"`
@@ -20,7 +21,6 @@ var LangFrom string
 var LangTo string
 
 var dictMap = make(map[string][]string)
-var wordCharReg = regexp.MustCompile("[\\p{L}]")
 
 func InitDictionary(langFrom, langTo, path string) {
 	LangFrom = langFrom
@@ -63,35 +63,35 @@ func IsSupported(from, to string) bool {
 	return LangFrom == from && LangTo == to
 }
 
+// TODO take punctuation into account
 func TranslateText(langFrom, langTo, text string, maxAlt int) string {
-	var tmp bytes.Buffer
 	var res bytes.Buffer
 
-	for _, ch := range text {
-		str := fmt.Sprintf("%c", ch)
+	// split text into words
+	words := strings.Fields(text)
 
-		switch {
-		case wordCharReg.MatchString(str):
-			tmp.WriteString(str)
-		default:
-			if tmp.Len() == 0 {
-				res.WriteString(str)
+	for i := 0; i < len(words); i++ {
+		word := strings.ToLower(words[i])
+		foundWord, distWord := findByMinDist(word)
+
+		if i+1 < len(words) {
+			nextWord := strings.ToLower(words[i+1])
+			foundPair, distPair := findByMinDist(word + " " + nextWord)
+
+			// pair has better result than a single word?
+			if distPair < distWord {
+				res.WriteString(translationWords(dictMap[foundPair], maxAlt) + " ")
+				i += 2
 				continue
 			}
-
-			if val, ok := dictMap[strings.ToLower(tmp.String())]; ok {
-				res.WriteString(translationWords(val, maxAlt) + str)
-				tmp.Reset()
-			} else {
-				found := findByMinDist(strings.ToLower(tmp.String()))
-				if found == "" {
-					res.WriteString(tmp.String() + str)
-				} else {
-					res.WriteString(translationWords(dictMap[found], maxAlt) + str)
-				}
-				tmp.Reset()
-			}
 		}
+
+		if foundWord == "" {
+			res.WriteString(word + " ")
+		} else {
+			res.WriteString(translationWords(dictMap[foundWord], maxAlt) + " ")
+		}
+
 	}
 
 	return res.String()
@@ -115,8 +115,8 @@ func translationWords(val []string, maxAlt int) string {
 	return buf.String()
 }
 
-func findByMinDist(word string) string {
-	minDist := -1
+func findByMinDist(word string) (string, int) {
+	minDist := math.MaxInt64
 	result := ""
 
 	for k := range dictMap {
@@ -135,12 +135,12 @@ func findByMinDist(word string) string {
 		}
 		dist := levenshtein.DistanceForStrings([]rune(word), []rune(k), options)
 
-		if minDist == -1 || dist < minDist {
+		if dist < minDist {
 			minDist = dist
 			result = k
 		}
 
 	}
 
-	return result
+	return result, minDist
 }
