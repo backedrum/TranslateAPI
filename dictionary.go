@@ -5,9 +5,12 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/texttheater/golang-levenshtein/levenshtein"
+	"gopkg.in/jdkato/prose.v2"
+	"log"
 	"math"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -19,8 +22,11 @@ type Entry struct {
 
 var LangFrom string
 var LangTo string
+var Mode string
 
 var dictMap = make(map[string][]string)
+
+var translateFunc func(langFrom, langTo, text string, maxAlt int) string = TranslateText
 
 func InitDictionary(langFrom, langTo, path string) {
 	LangFrom = langFrom
@@ -61,6 +67,31 @@ func InitDictionary(langFrom, langTo, path string) {
 
 func IsSupported(from, to string) bool {
 	return LangFrom == from && LangTo == to
+}
+
+func TranslateTextWithParse(langFrom, langTo, text string, maxAlt int) string {
+	doc, err := prose.NewDocument(text)
+	if err != nil {
+		log.Fatal(err)
+		return "Sorry, cannot build a new document from text " + text
+	}
+
+	var res bytes.Buffer
+	for _, tok := range doc.Tokens() {
+		nonPunctuation := regexp.MustCompile("^[^A-Z]+$")
+		if !nonPunctuation.MatchString(tok.Tag) {
+			var word, _ = findByMinDist(strings.ToLower(tok.Text))
+
+			if dictMap[word] != nil {
+				res.WriteString(translationWords(dictMap[word], maxAlt) + " ")
+				continue
+			}
+		}
+
+		res.WriteString(tok.Text + " ")
+	}
+
+	return res.String()
 }
 
 // TODO take punctuation into account

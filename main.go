@@ -34,7 +34,7 @@ func translate(res http.ResponseWriter, req *http.Request) {
 		maxAlt, _ = strconv.Atoi(maxAltStr)
 	}
 
-	response := ServerResponse{html.UnescapeString(text), html.UnescapeString(TranslateText(from, to, html.UnescapeString(text), maxAlt)), from, to}
+	response := ServerResponse{html.UnescapeString(text), html.UnescapeString(translateFunc(from, to, html.UnescapeString(text), maxAlt)), from, to}
 
 	xml, error := xml.MarshalIndent(response, "", "  ")
 	if error != nil {
@@ -50,15 +50,21 @@ func translate(res http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	if len(os.Args) != 4 {
-		fmt.Println("Usage: server <language from> <language to> <path to file>")
+	if len(os.Args) != 5 {
+		fmt.Println("Usage: server <language from> <language to> <mode> <path to file>")
+		fmt.Println("Example: server NL EN prose my_dictionary.tld")
 		os.Exit(1)
 	}
 
 	LangFrom = os.Args[1]
 	LangTo = os.Args[2]
+	Mode = os.Args[3]
 
-	InitDictionary(LangFrom, LangTo, os.Args[3])
+	if "prose" == Mode {
+		translateFunc = TranslateTextWithParse
+	}
+
+	InitDictionary(LangFrom, LangTo, os.Args[4])
 
 	http.HandleFunc("/translate", translate)
 
