@@ -26,7 +26,7 @@ var Mode string
 
 var dictMap = make(map[string][]string)
 
-var translateFunc func(langFrom, langTo, text string, maxAlt int) string = TranslateText
+var translateFunc = TranslateText
 
 func InitDictionary(langFrom, langTo, path string) {
 	LangFrom = langFrom
@@ -77,21 +77,80 @@ func TranslateTextWithParse(langFrom, langTo, text string, maxAlt int) string {
 	}
 
 	var res bytes.Buffer
-	for _, tok := range doc.Tokens() {
-		nonPunctuation := regexp.MustCompile("^[^A-Z]+$")
-		if !nonPunctuation.MatchString(tok.Tag) {
-			var word, _ = findByMinDist(strings.ToLower(tok.Text))
 
-			if dictMap[word] != nil {
-				res.WriteString(translationWords(dictMap[word], maxAlt) + " ")
-				continue
-			}
+	for _, seq := range splitToSequences(doc.Tokens()) {
+		if dictMap[seq] != nil {
+			res.WriteString(translationWords(dictMap[seq], maxAlt) + " ")
+			continue
 		}
 
-		res.WriteString(tok.Text + " ")
+		res.WriteString(seq)
 	}
 
 	return res.String()
+}
+
+func splitToSequences(tokens []prose.Token) []string {
+	var result []string
+
+	seqSoFar := ""
+	distSoFar := math.MaxInt64
+
+	resetSeq := func() {
+		seqSoFar = ""
+		distSoFar = math.MaxInt64
+	}
+
+	setSeq := func(newDictSeq string, newDistSoFar int) {
+		seqSoFar = newDictSeq
+		distSoFar = newDistSoFar
+	}
+
+	for _, tok := range tokens {
+		nonPunctuation := regexp.MustCompile("^[A-Z]+$")
+		if !nonPunctuation.MatchString(tok.Tag) {
+			// non empty seqSoFar?
+			if seqSoFar != "" {
+				result = append(result, seqSoFar)
+				resetSeq()
+			}
+
+			result = append(result, tok.Text+" ")
+			continue
+		}
+
+		// sequence extension and flush related logic
+		newSeq := strings.ToLower(tok.Text)
+		if seqSoFar != "" {
+			newSeq = seqSoFar + " " + newSeq
+		}
+
+		dictSeq, dist := findByMinDist(newSeq)
+
+		if dictSeq != "" {
+
+			// better sequence? increase
+			if dist < distSoFar {
+				seqSoFar = dictSeq
+				distSoFar = dist
+				continue
+			}
+
+			// flush previous sequence
+			result = append(result, seqSoFar)
+
+			// start with building of a new sequence
+			setSeq(findByMinDist(strings.ToLower(tok.Text)))
+		}
+
+	}
+
+	// final flush
+	if seqSoFar != "" {
+		result = append(result, seqSoFar)
+	}
+
+	return result
 }
 
 // TODO take punctuation into account
@@ -131,7 +190,7 @@ func TranslateText(langFrom, langTo, text string, maxAlt int) string {
 func translationWords(val []string, maxAlt int) string {
 	var buf bytes.Buffer
 
-	for i, _ := range val {
+	for i := range val {
 		if i > maxAlt {
 			break
 		}
