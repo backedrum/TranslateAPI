@@ -13,13 +13,15 @@ You can create your own TEI dictionary file or download a needed one from here: 
  > make
 
 ###Start server:
- > translate-api [lang from] [lang to] [path to your dictionary file]
+ > translate-api [lang from] [lang to] [mode] [path to your dictionary file]
+- *mode* Switches translation mode. There are two possible modes: default and prose.
+
 
 ###Request parameters:
 - *text*    Text to translate
 - *from*    Language of the original text 
 - *to*      Language of result text
-- *max-alt* Some words might have alternative translations. Specify this param to include certain number of
+- *maxAlt* Some words might have alternative translations. Specify this param to include certain number of
             words alternative translations into a result text.
 
 ###Request example:

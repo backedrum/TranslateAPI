@@ -29,7 +29,7 @@ func translate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	maxAlt := 0
-	maxAltStr := req.URL.Query().Get("max-alt")
+	maxAltStr := req.URL.Query().Get("maxAlt")
 	if maxAltStr != "" {
 		maxAlt, _ = strconv.Atoi(maxAltStr)
 	}
@@ -62,6 +62,9 @@ func main() {
 
 	if "prose" == Mode {
 		translateFunc = TranslateTextWithParse
+	} else if "default" != Mode {
+		fmt.Println("Translation mode should be set either to prose or to default")
+		os.Exit(1)
 	}
 
 	InitDictionary(LangFrom, LangTo, os.Args[4])

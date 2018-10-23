@@ -12,8 +12,8 @@ func init() {
 	dictMap["other"] = []string{"a3", "a4"}
 
 	// init languages
-	LangFrom = "nl"
-	LangTo = "en"
+	LangFrom = "NL"
+	LangTo = "EN"
 }
 
 func TestFindByMinDist(t *testing.T) {

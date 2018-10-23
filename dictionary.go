@@ -29,8 +29,8 @@ var dictMap = make(map[string][]string)
 var translateFunc = TranslateText
 
 func InitDictionary(langFrom, langTo, path string) {
-	LangFrom = langFrom
-	LangTo = langTo
+	LangFrom = strings.ToUpper(langFrom)
+	LangTo = strings.ToUpper(langTo)
 
 	filePath, error := filepath.Abs(path)
 	if error != nil {
@@ -66,7 +66,7 @@ func InitDictionary(langFrom, langTo, path string) {
 }
 
 func IsSupported(from, to string) bool {
-	return LangFrom == from && LangTo == to
+	return LangFrom == strings.ToUpper(from) && LangTo == strings.ToUpper(to)
 }
 
 func TranslateTextWithParse(langFrom, langTo, text string, maxAlt int) string {
@@ -96,19 +96,23 @@ func splitToSequences(tokens []prose.Token) []string {
 	seqSoFar := ""
 	distSoFar := math.MaxInt64
 
+	// start building a next sequence
 	resetSeq := func() {
 		seqSoFar = ""
 		distSoFar = math.MaxInt64
 	}
 
+	// set current sequence
 	setSeq := func(newDictSeq string, newDistSoFar int) {
 		seqSoFar = newDictSeq
 		distSoFar = newDistSoFar
 	}
 
 	for _, tok := range tokens {
-		nonPunctuation := regexp.MustCompile("^[A-Z]+$")
-		if !nonPunctuation.MatchString(tok.Tag) {
+		// we use this regexp in order to determine whether
+		// a certain token should be translated
+		shouldBeTranslated := regexp.MustCompile("^[A-Z]+$")
+		if !shouldBeTranslated.MatchString(tok.Tag) {
 			// non empty seqSoFar?
 			if seqSoFar != "" {
 				result = append(result, seqSoFar)
@@ -131,18 +135,14 @@ func splitToSequences(tokens []prose.Token) []string {
 
 			// better sequence? increase
 			if dist < distSoFar {
-				seqSoFar = dictSeq
-				distSoFar = dist
+				setSeq(dictSeq, dist)
 				continue
 			}
-
-			// flush previous sequence
-			result = append(result, seqSoFar)
-
-			// start with building of a new sequence
-			setSeq(findByMinDist(strings.ToLower(tok.Text)))
 		}
 
+		// does not make sense to continue, so flushing a previous sequence and start with a new one
+		result = append(result, seqSoFar)
+		setSeq(findByMinDist(strings.ToLower(tok.Text)))
 	}
 
 	// final flush
@@ -205,6 +205,7 @@ func translationWords(val []string, maxAlt int) string {
 	return buf.String()
 }
 
+// Find a similar text and distance to it for a given text string.
 func findByMinDist(word string) (string, int) {
 	minDist := math.MaxInt64
 	result := ""
