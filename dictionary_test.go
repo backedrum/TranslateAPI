@@ -49,7 +49,7 @@ func TestTranslateText(t *testing.T) {
 	}
 
 	for i, gold := range golds {
-		translated := strings.Trim(TranslateText("", "", gold.text, gold.alts), " ")
+		translated := strings.Trim(TranslateDefault("", "", gold.text, gold.alts), " ")
 		if gold.expTranslation != translated {
 			t.Fatalf("Failed case %d. Expected translation is:%s, Translated:%s", i, gold.expTranslation, translated)
 		}
