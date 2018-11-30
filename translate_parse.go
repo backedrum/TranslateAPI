@@ -59,7 +59,7 @@ func splitToSequences(tokens []prose.Token) []string {
 				resetSeq()
 			}
 
-			result = append(result, tok.Text+" ")
+			result = append(result, tok.Text)
 			continue
 		}
 
@@ -81,8 +81,18 @@ func splitToSequences(tokens []prose.Token) []string {
 		}
 
 		// does not make sense to continue, so flushing a previous sequence and start with a new one
-		result = append(result, seqSoFar)
-		setSeq(findByMinDist(strings.ToLower(tok.Text)))
+		if seqSoFar != "" {
+			result = append(result, seqSoFar)
+		}
+
+		// deal with the current token
+		dictSeq, _ = findByMinDist(strings.ToLower(tok.Text))
+		if dictSeq == "" {
+			result = append(result, tok.Text + " ")
+			resetSeq()
+		} else {
+			setSeq(findByMinDist(strings.ToLower(tok.Text)))
+		}
 	}
 
 	// final flush

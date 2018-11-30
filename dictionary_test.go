@@ -2,19 +2,8 @@ package main
 
 import (
 	"math"
-	"strings"
 	"testing"
 )
-
-func init() {
-	// init dict
-	dictMap["test1"] = []string{"a1", "a2"}
-	dictMap["other"] = []string{"a3", "a4"}
-
-	// init languages
-	LangFrom = "NL"
-	LangTo = "EN"
-}
 
 func TestFindByMinDist(t *testing.T) {
 	golds := []struct {
@@ -33,25 +22,6 @@ func TestFindByMinDist(t *testing.T) {
 		key, dist := findByMinDist(gold.word)
 		if gold.expKey != key || gold.expDist != dist {
 			t.Fatalf("Failed case %d. Expected key and dist are:%s-%d, was:%s-%d", i, gold.expKey, gold.expDist, key, dist)
-		}
-	}
-}
-
-func TestTranslateText(t *testing.T) {
-	golds := []struct {
-		text           string
-		alts           int
-		expTranslation string
-	}{
-		0: {"test1 other", 0, "a1 a3"},
-		1: {"test, not", 1, "a1[alt:a2] not"},
-		2: {"other testX", 1, "a3[alt:a4] a1[alt:a2]"},
-	}
-
-	for i, gold := range golds {
-		translated := strings.Trim(TranslateDefault("", "", gold.text, gold.alts), " ")
-		if gold.expTranslation != translated {
-			t.Fatalf("Failed case %d. Expected translation is:%s, Translated:%s", i, gold.expTranslation, translated)
 		}
 	}
 }
