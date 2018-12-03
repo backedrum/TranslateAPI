@@ -9,8 +9,12 @@ import (
 	"strings"
 )
 
+const SPACE_SUB = "|"
+
 func TranslateTextWithParse(langFrom, langTo, text string, maxAlt int) string {
-	doc, err := prose.NewDocument(text)
+	var modifiedText = strings.Replace(text, " ", " "+SPACE_SUB+" ", -1)
+
+	doc, err := prose.NewDocument(modifiedText)
 	if err != nil {
 		log.Fatal(err)
 		return "Sorry, cannot build a new document from text " + text
@@ -20,7 +24,7 @@ func TranslateTextWithParse(langFrom, langTo, text string, maxAlt int) string {
 
 	for _, seq := range splitToSequences(doc.Tokens()) {
 		if dictMap[seq] != nil {
-			res.WriteString(translationWords(dictMap[seq], maxAlt) + " ")
+			res.WriteString(translationWords(dictMap[seq], maxAlt))
 			continue
 		}
 
@@ -48,6 +52,14 @@ func splitToSequences(tokens []prose.Token) []string {
 		distSoFar = newDistSoFar
 	}
 
+	spaceBack := func(str string) string {
+		if str == SPACE_SUB {
+			return " "
+		}
+
+		return str
+	}
+
 	for _, tok := range tokens {
 		// we use this regexp in order to determine whether
 		// a certain token should be translated
@@ -63,10 +75,12 @@ func splitToSequences(tokens []prose.Token) []string {
 			continue
 		}
 
+		var lowTokenText = strings.ToLower(spaceBack(tok.Text))
+
 		// sequence extension and flush related logic
-		newSeq := strings.ToLower(tok.Text)
+		newSeq := lowTokenText
 		if seqSoFar != "" {
-			newSeq = seqSoFar + " " + newSeq
+			newSeq = seqSoFar + newSeq
 		}
 
 		dictSeq, dist := findByMinDist(newSeq)
@@ -86,12 +100,12 @@ func splitToSequences(tokens []prose.Token) []string {
 		}
 
 		// deal with the current token
-		dictSeq, _ = findByMinDist(strings.ToLower(tok.Text))
+		dictSeq, _ = findByMinDist(lowTokenText)
 		if dictSeq == "" {
-			result = append(result, tok.Text + " ")
+			result = append(result, spaceBack(tok.Text))
 			resetSeq()
 		} else {
-			setSeq(findByMinDist(strings.ToLower(tok.Text)))
+			setSeq(findByMinDist(lowTokenText))
 		}
 	}
 
