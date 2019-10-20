@@ -1,13 +1,21 @@
 package main
 
 import (
-	"encoding/xml"
+	"encoding/json"
 	"fmt"
 	"html"
 	"net/http"
 	"os"
 	"strconv"
 )
+
+const FROM_LANGUAGE_IDX = 1
+const TO_LANGUAGE_IDX = 2
+const TRANSLATION_MODE_IDX = 3
+const DICTIONARY_PATH_IDX = 4
+
+const DEFAULT_MODE = "default"
+const PROSE_MODE = "prose"
 
 type ServerResponse struct {
 	Original        string
@@ -34,19 +42,39 @@ func translate(res http.ResponseWriter, req *http.Request) {
 		maxAlt, _ = strconv.Atoi(maxAltStr)
 	}
 
-	response := ServerResponse{html.UnescapeString(text), html.UnescapeString(translateFunc(from, to, html.UnescapeString(text), maxAlt)), from, to}
+	response := ServerResponse{html.UnescapeString(text),
+		html.UnescapeString(translateFunc(from, to, html.UnescapeString(text), maxAlt)), from, to}
 
-	xml, error := xml.MarshalIndent(response, "", "  ")
+	json, error := json.MarshalIndent(response, "", "  ")
 	if error != nil {
 		http.Error(res, error.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	res.Header().Set(
-		"Content-Type",
-		"application/xml",
-	)
-	res.Write(xml)
+	res.Header().Set("Content-Type", "application/json")
+	res.Write(json)
+}
+
+func inspectEntry(res http.ResponseWriter, req *http.Request) {
+	langFrom := req.URL.Query().Get("lang-from")
+	langTo := req.URL.Query().Get("lang-to")
+	textToInspect := req.URL.Query().Get("text")
+
+	if !IsSupported(langFrom, langTo) {
+		http.Error(res,
+			"Sorry, server currently doesn't support translation from "+langFrom+" to "+langTo,
+			http.StatusNotImplemented)
+	}
+
+	entry := Inspect(langFrom, langTo, textToInspect)
+
+	json, error := json.MarshalIndent(*entry, "", "")
+	if error != nil {
+		http.Error(res, error.Error(), http.StatusInternalServerError)
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	res.Write(json)
 }
 
 func main() {
@@ -56,20 +84,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	LangFrom = os.Args[1]
-	LangTo = os.Args[2]
-	Mode = os.Args[3]
+	LangFrom = os.Args[FROM_LANGUAGE_IDX]
+	LangTo = os.Args[TO_LANGUAGE_IDX]
+	Mode = os.Args[TRANSLATION_MODE_IDX]
 
-	if "prose" == Mode {
+	if PROSE_MODE == Mode {
 		translateFunc = TranslateTextWithParse
-	} else if "default" != Mode {
+	} else if DEFAULT_MODE != Mode {
 		fmt.Println("Translation mode should be set either to prose or to default")
 		os.Exit(1)
 	}
 
-	InitDictionary(LangFrom, LangTo, os.Args[4])
+	InitDictionary(LangFrom, LangTo, os.Args[DICTIONARY_PATH_IDX])
 
 	http.HandleFunc("/translate", translate)
+
+	http.HandleFunc("/inspect", inspectEntry)
 
 	http.ListenAndServe(":9000", nil)
 }

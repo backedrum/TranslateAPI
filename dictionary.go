@@ -14,14 +14,26 @@ import (
 // TEI file mappings
 type Entry struct {
 	Original   string   `xml:"form>orth"`
+	Pron string `xml:"form>pron"`
 	Translated []string `xml:"sense>cit>quote"`
+}
+
+// Used for DEBUGGING
+type InspectionEntry struct {
+	Entry
+	Closest string
+	Distance int
 }
 
 var LangFrom string
 var LangTo string
 var Mode string
 
+// original word or phrase -> [list of translation alternatives]
 var dictMap = make(map[string][]string)
+
+// original word or phrase -> pronunciation
+var pronMap = make(map[string]string)
 
 var translateFunc = TranslateDefault
 
@@ -57,9 +69,40 @@ func InitDictionary(langFrom, langTo, path string) {
 				decoder.DecodeElement(&e, &startElement)
 				// put pair into the map
 				dictMap[strings.ToLower(e.Original)] = e.Translated
+
+				// put pronunciation
+				pronMap[strings.ToLower(e.Original)] = e.Pron
 			}
 		}
 	}
+}
+
+func Inspect(from, to, text string) *InspectionEntry {
+	result := InspectionEntry{}
+
+	textToCheck := strings.ToLower(text)
+	dist := 0
+
+	if dictMap[textToCheck] != nil {
+		result.Original = textToCheck
+		result.Translated = dictMap[textToCheck]
+	} else {
+		// try approx match
+		textToCheck, dist = findByMinDist(textToCheck)
+
+		if textToCheck != "" {
+			result.Closest = textToCheck
+			result.Translated = dictMap[textToCheck]
+			result.Distance = dist
+		}
+	}
+
+	// check if pronunciation is available
+	if pronMap[textToCheck] != "" {
+		result.Pron = pronMap[textToCheck]
+	}
+
+	return &result
 }
 
 func IsSupported(from, to string) bool {
