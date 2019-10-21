@@ -1,4 +1,4 @@
-##Translation REST server.
+# Translation REST server.
 
 Simple REST API that might be used to perform dictionary based translation.
 
