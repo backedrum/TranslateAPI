@@ -1,4 +1,4 @@
-##Translation REST server.
+## Translation REST server.
 
 Simple REST API that might be used to perform dictionary based translation.
 
@@ -9,10 +9,10 @@ You can learn more about the format from this site: http://freedict.org/en/
 
 You can create your own TEI dictionary file or download a needed one from here: https://github.com/freedict/fd-dictionaries
 
-###Make
+### Make
  > make
 
-###Start server:
+### Start server:
  > translate-api [lang from] [lang to] [mode] [path to your dictionary file]
 - *mode* Switches translation mode. There are two possible modes: default and prose.
 
@@ -21,14 +21,14 @@ You can create your own TEI dictionary file or download a needed one from here: 
 
 # Translation
 
-###Request parameters:
+### Request parameters:
 - *text*    Text to translate
 - *from*    Language of the original text 
 - *to*      Language of result text
 - *maxAlt* Some words might have alternative translations. Specify this param to include certain number of
             words alternative translations into a result text.
 
-###Request example:
+### Request example:
 > http://localhost:9000/translate?text=%22Goedemorgen%20iedereen%22&from=NL&to=EN&max-alt=2
 
 # Inspection
