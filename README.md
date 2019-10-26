@@ -1,4 +1,4 @@
-## Translation REST server.
+#  Translation REST server.
 
 Simple REST API that might be used to perform dictionary based translation.
 
@@ -9,7 +9,7 @@ You can learn more about the format from this site: http://freedict.org/en/
 
 You can create your own TEI dictionary file or download a needed one from here: https://github.com/freedict/fd-dictionaries
 
-### Make
+## Make
  > make
 
 ### Start server:
@@ -19,7 +19,7 @@ You can create your own TEI dictionary file or download a needed one from here: 
 ### Example start server:
 > ./translate-api nl en prose ~/Desktop/my-nl-to-en.tei
 
-# Translation
+## Translation
 
 ### Request parameters:
 - *text*    Text to translate
@@ -31,14 +31,14 @@ You can create your own TEI dictionary file or download a needed one from here: 
 ### Request example:
 > http://localhost:9000/translate?text=%22Goedemorgen%20iedereen%22&from=NL&to=EN&max-alt=2
 
-# Inspection
+## Inspection
 
 Debugging endpoint to check what will be the result for particular word or phrase including closest match and distance.
 
-###Request parameters:
+### Request parameters:
 - *lang-from* Language of original text
 - *lang-to* Language of result text
 - *text* Text to inspect
 
-###Request example:
+### Request example:
 > http://localhost:9000/inspect?text=balsturig&lang-from=NL&lang-to=EN
